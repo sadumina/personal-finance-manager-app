@@ -203,6 +203,9 @@ fun InsightsScreen(
             // ── Monthly Comparison ────────────────────────────────────────────
             MonthlyComparisonCard()
 
+            // Cash flow chart
+            CashFlowChartCard()
+
             Spacer(Modifier.height(16.dp))
         }
     }
