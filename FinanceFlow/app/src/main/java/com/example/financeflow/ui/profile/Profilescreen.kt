@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DarkMode
@@ -45,6 +46,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +64,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.financeflow.ui.components.profile.ChangePasswordDialog
 import com.example.financeflow.ui.components.profile.EditProfileDialog
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 private val BgPurple = Color(0xFFEDE2FF)
 private val CardWhite = Color(0xFFFFFFFF)
@@ -72,13 +77,15 @@ private val FieldBorder = Color(0xFFD0C4E8)
 private val LabelGray = Color(0xFF888888)
 private val DarkText = Color(0xFF1A1A1A)
 
-private const val USER_NAME = "Kavindu Silva"
-private const val USER_EMAIL = "kavindusilva123@gmail.com"
-
 private val currencyOptions = listOf(
     "LKR (Sri Lankan Rupee)", "USD (US Dollar)", "EUR (Euro)", "GBP (British Pound)"
 )
 private val trackerOptions = listOf("Real-Time", "Daily Summary", "Weekly Summary")
+
+private data class ProfileUser(
+    val name: String = "FinanceFlow User",
+    val email: String = "Not signed in"
+)
 
 @Composable
 fun ProfileScreen(
@@ -98,8 +105,13 @@ fun ProfileScreen(
 
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showEditProfilePopup by remember { mutableStateOf(false) }
+    var profileUser by remember { mutableStateOf(ProfileUser()) }
 
     val palette = profilePalette(isDarkTheme)
+
+    LaunchedEffect(Unit) {
+        profileUser = loadProfileUser()
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -110,7 +122,9 @@ fun ProfileScreen(
     ) {
         item {
             ProfileHeaderCard(
+                user = profileUser,
                 isDarkTheme = isDarkTheme,
+                onNavigateBack = onNavigateBack,
                 onThemeToggle = onThemeToggle,
                 palette = palette
             )
@@ -123,8 +137,8 @@ fun ProfileScreen(
         }
         item {
             UserInformationCard(
-                fullName = USER_NAME,
-                email = USER_EMAIL,
+                fullName = profileUser.name,
+                email = profileUser.email,
                 palette = palette
             )
         }
@@ -184,7 +198,9 @@ fun ProfileScreen(
 
 @Composable
 private fun ProfileHeaderCard(
+    user: ProfileUser,
     isDarkTheme: Boolean,
+    onNavigateBack: () -> Unit,
     onThemeToggle: () -> Unit,
     palette: ProfilePalette
 ) {
@@ -201,26 +217,40 @@ private fun ProfileHeaderCard(
                 .padding(horizontal = 20.dp, vertical = 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Profile",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = palette.titleColor,
-                modifier = Modifier.width(72.dp)
-            )
+            Row(
+                modifier = Modifier.width(92.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = palette.titleColor,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .clickable { onNavigateBack() }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Profile",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = palette.titleColor
+                )
+            }
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = USER_NAME,
+                    text = user.name,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = palette.primaryTextColor
                 )
                 Spacer(modifier = Modifier.height(3.dp))
                 Text(
-                    text = USER_EMAIL,
+                    text = user.email,
                     fontSize = 11.sp,
                     color = palette.secondaryTextColor
                 )
@@ -655,6 +685,31 @@ private fun profilePalette(isDarkTheme: Boolean): ProfilePalette {
             dividerColor = Color(0xFFF0F0F0)
         )
     }
+}
+
+private suspend fun loadProfileUser(): ProfileUser {
+    val authUser = FirebaseAuth.getInstance().currentUser ?: return ProfileUser()
+    val email = authUser.email.orEmpty().ifBlank { "No email" }
+    val fallbackName = authUser.displayName
+        ?: email.substringBefore("@").replaceFirstChar { it.uppercase() }
+
+    return runCatching {
+        val snapshot = FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(authUser.uid)
+            .get()
+            .await()
+
+        val firestoreName = snapshot.getString("fullName")
+            ?: snapshot.getString("name")
+            ?: snapshot.getString("username")
+        val firestoreEmail = snapshot.getString("email")
+
+        ProfileUser(
+            name = firestoreName?.takeIf { it.isNotBlank() } ?: fallbackName,
+            email = firestoreEmail?.takeIf { it.isNotBlank() } ?: email
+        )
+    }.getOrDefault(ProfileUser(name = fallbackName, email = email))
 }
 
 @Preview(showBackground = true, showSystemUi = true, name = "ProfileScreen - Light")

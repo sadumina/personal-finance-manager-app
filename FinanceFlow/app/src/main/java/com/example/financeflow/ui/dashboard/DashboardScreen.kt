@@ -44,6 +44,15 @@ fun DashboardScreen(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    fun navigateDashboardTab(route: String) {
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -51,13 +60,7 @@ fun DashboardScreen(
             BottomNavigationBar(
                 currentDestination = currentDestination,
                 onItemClick = { item ->
-                    navController.navigate(item.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    navigateDashboardTab(item.route)
                 }
             )
         }
@@ -84,12 +87,12 @@ fun DashboardScreen(
             composable(Routes.HOME) {
                 HomeScreen(
                     onAddIncomeClick = { rootNavController.navigate(Routes.ADD_INCOME) },
-                    onAddExpenseClick = { navController.navigate(Routes.EXPENSES) },
-                    onIncomeClick = { navController.navigate(Routes.INCOME) },
-                    onGoalsClick = { navController.navigate(Routes.GOALS) },
-                    onExpensesClick = { navController.navigate(Routes.EXPENSES) },
-                    onSavingsClick = { navController.navigate(Routes.SAVINGS) },
-                    onGoalCardClick = { navController.navigate(Routes.GOALS) },
+                    onAddExpenseClick = { navigateDashboardTab(Routes.EXPENSES) },
+                    onIncomeClick = { navigateDashboardTab(Routes.INCOME) },
+                    onGoalsClick = { navigateDashboardTab(Routes.GOALS) },
+                    onExpensesClick = { navigateDashboardTab(Routes.EXPENSES) },
+                    onSavingsClick = { navigateDashboardTab(Routes.SAVINGS) },
+                    onGoalCardClick = { navigateDashboardTab(Routes.GOALS) },
                     onThemeClick = onThemeToggle,
                     onProfileClick = { navController.navigate(Routes.PROFILE) }
                 )
