@@ -198,7 +198,7 @@ fun LoginScreen(
                 }
 
                 Text(
-                    text = "Forget password ?",
+                    text = "Forgot password?",
                     fontSize = 13.sp,
                     color = PrimaryPurple,
                     modifier = Modifier.clickable { onForgotPassword() }

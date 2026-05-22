@@ -1,15 +1,24 @@
 package com.example.financeflow.ui.components.Home
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,6 +60,13 @@ fun QuickActionButton(
     modifier: Modifier = Modifier,
     elevation: Dp = 6.dp
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.97f else 1f,
+        label = "quick_action_press"
+    )
+
     Box(
         modifier = modifier
             .shadow(
@@ -59,21 +75,37 @@ fun QuickActionButton(
                 ambientColor = backgroundColor.copy(alpha = 0.25f),
                 spotColor    = backgroundColor.copy(alpha = 0.35f)
             )
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(50))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        backgroundColor,
+                        backgroundColor.copy(alpha = 0.88f),
+                        backgroundColor
+                    )
+                )
+            )
     ) {
         Button(
             onClick  = onClick,
+            interactionSource = interactionSource,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
             shape    = RoundedCornerShape(50),
             colors   = ButtonDefaults.buttonColors(
-                containerColor = backgroundColor,
+                containerColor = Color.Transparent,
                 contentColor   = contentColor
             ),
             contentPadding = PaddingValues(horizontal = 20.dp)
         ) {
             Row(
-                verticalAlignment     = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
                 Icon(

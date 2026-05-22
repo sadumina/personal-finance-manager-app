@@ -5,10 +5,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
@@ -36,7 +33,6 @@ fun AppNavGraph(
     onThemeToggle: () -> Unit
 ) {
     val navController = rememberNavController()
-    val topPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
 
     NavHost(
         navController = navController,
@@ -53,7 +49,7 @@ fun AppNavGraph(
         popExitTransition = {
             fadeOut(animationSpec = tween(120)) + slideOutHorizontally { it / 12 }
         },
-        modifier = Modifier.padding(top = topPadding)
+        modifier = Modifier.fillMaxSize()
     ) {
         composable(Routes.SPLASH) {
             SplashScreen(

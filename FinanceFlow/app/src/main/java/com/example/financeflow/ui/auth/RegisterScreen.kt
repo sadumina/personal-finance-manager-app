@@ -126,7 +126,7 @@ fun RegisterScreen(
             Spacer(Modifier.height(4.dp))
 
             Text(
-                text = "by creating a account.",
+                text = "by creating an account.",
                 fontSize = 13.sp,
                 color = TextHint
             )
@@ -297,7 +297,7 @@ fun RegisterScreen(
             val loginText = buildAnnotatedString {
                 append("Already a member? ")
                 withStyle(SpanStyle(color = PrimaryPurple, fontWeight = FontWeight.Bold)) {
-                    append("Login in")
+                    append("Log in")
                 }
             }
             Text(

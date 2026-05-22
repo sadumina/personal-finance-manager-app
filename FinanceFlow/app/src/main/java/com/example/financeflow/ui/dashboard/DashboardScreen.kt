@@ -109,9 +109,7 @@ fun DashboardScreen(
 
             composable(Routes.GOALS) {
                 GoalsScreen(
-                    onNavigateToDetail = { goalId ->
-                        rootNavController.navigate("goal_detail/$goalId")
-                    }
+                    onNavigateToDetail = { }
                 )
             }
 
