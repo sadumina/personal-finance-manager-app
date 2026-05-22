@@ -1,6 +1,9 @@
 package com.example.financeflow.ui.components.Home
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -21,6 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -38,6 +43,7 @@ private val SelectedBubble     = Color(0xFFEDE7FF)
 private val SelectedIconTint   = Color(0xFF7C4DFF)
 private val UnselectedIconTint = Color(0xFFB0B0C3)
 private val SelectedLabelColor = Color(0xFF7C4DFF)
+private val SelectedGlow       = Color(0x337C4DFF)
 
 private val bottomNavItems = listOf(
     BottomNavItem.Home,
@@ -64,15 +70,21 @@ fun BottomNavigationBar(
         modifier = Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
-            .padding(horizontal = 24.dp, vertical = 8.dp)
+            .padding(horizontal = 18.dp, vertical = 10.dp)
     ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp), // More compact height
+                .height(70.dp)
+                .shadow(
+                    elevation = 16.dp,
+                    shape = RoundedCornerShape(35.dp),
+                    ambientColor = SelectedGlow,
+                    spotColor = Color.Black.copy(alpha = 0.12f)
+                ),
             color = NavBarBackground,
             shape = RoundedCornerShape(32.dp),
-            shadowElevation = 12.dp
+            shadowElevation = 0.dp
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -138,7 +150,15 @@ private fun RowScope.BottomNavTab(
                     modifier = Modifier
                         .size(bubbleSize)
                         .clip(CircleShape)
-                        .background(SelectedBubble)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    SelectedBubble,
+                                    Color.White,
+                                    SelectedBubble.copy(alpha = 0.72f)
+                                )
+                            )
+                        )
                 )
             }
             Icon(
@@ -151,7 +171,11 @@ private fun RowScope.BottomNavTab(
                 }
             )
         }
-        if (isSelected) {
+        AnimatedVisibility(
+            visible = isSelected,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
             Text(
                 text  = item.title,
                 style = MaterialTheme.typography.labelSmall.copy(

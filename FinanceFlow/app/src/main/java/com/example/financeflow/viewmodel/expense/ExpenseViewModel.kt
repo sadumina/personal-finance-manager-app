@@ -37,10 +37,13 @@ data class ExpenseUiState(
 data class AddExpenseFormState(
     val expenseType: String = "must",
     val amount: String = "",
+    val amountError: String? = null,
     val category: String = "Food",
     val description: String = "",
+    val descriptionError: String? = null,
     val paymentMethod: String = "Card",
-    val date: String = currentDateLabel()
+    val date: String = currentDateLabel(),
+    val dateError: String? = null
 )
 
 @HiltViewModel
@@ -105,7 +108,20 @@ class ExpenseViewModel @Inject constructor(
     }
 
     fun updateAmount(amount: String) {
-        formState.value = formState.value.copy(amount = amount.filter { it.isDigit() || it == '.' })
+        val filtered = amount
+            .filter { it.isDigit() || it == '.' }
+            .let { value ->
+                val firstDot = value.indexOf('.')
+                if (firstDot == -1) value else {
+                    value.take(firstDot + 1) + value.drop(firstDot + 1).replace(".", "")
+                }
+            }
+            .take(10)
+
+        formState.value = formState.value.copy(
+            amount = filtered,
+            amountError = null
+        )
     }
 
     fun updateCategory(category: String) {
@@ -113,7 +129,10 @@ class ExpenseViewModel @Inject constructor(
     }
 
     fun updateDescription(description: String) {
-        formState.value = formState.value.copy(description = description)
+        formState.value = formState.value.copy(
+            description = description.take(80),
+            descriptionError = null
+        )
     }
 
     fun updatePaymentMethod(paymentMethod: String) {
@@ -121,12 +140,35 @@ class ExpenseViewModel @Inject constructor(
     }
 
     fun updateDate(date: String) {
-        formState.value = formState.value.copy(date = date)
+        formState.value = formState.value.copy(
+            date = date.take(20),
+            dateError = null
+        )
     }
 
     fun saveExpense() {
         val form = formState.value
         val amount = form.amount.toDoubleOrNull()
+        val amountError = when {
+            form.amount.isBlank() -> "Amount is required"
+            amount == null -> "Enter a valid amount"
+            amount <= 0.0 -> "Amount must be more than zero"
+            amount > 10_000_000.0 -> "Amount is too high"
+            else -> null
+        }
+        val descriptionError = if (form.description.length > 80) "Keep description under 80 characters" else null
+        val dateError = if (parseExpenseDate(form.date) == null) "Use date like May 22, 2026" else null
+
+        if (amountError != null || descriptionError != null || dateError != null) {
+            formState.value = form.copy(
+                amountError = amountError,
+                descriptionError = descriptionError,
+                dateError = dateError
+            )
+            errorMessage.value = "Please fix the highlighted fields"
+            return
+        }
+
         if (amount == null || amount <= 0.0) {
             errorMessage.value = "Enter a valid amount"
             return
@@ -185,6 +227,9 @@ private fun labelToMonthKey(label: String): String =
     YearMonth.parse(label, DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US)).toString()
 
 private fun dateLabelToMonthKey(label: String): String =
+    parseExpenseDate(label)?.let { YearMonth.from(it).toString() } ?: YearMonth.now().toString()
+
+private fun parseExpenseDate(label: String): LocalDate? =
     runCatching {
-        YearMonth.from(LocalDate.parse(label, DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US))).toString()
-    }.getOrDefault(YearMonth.now().toString())
+        LocalDate.parse(label, DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US))
+    }.getOrNull()

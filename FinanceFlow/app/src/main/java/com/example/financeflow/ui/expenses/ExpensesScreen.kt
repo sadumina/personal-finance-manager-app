@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -89,7 +90,15 @@ fun ExpensesScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ScreenBackground)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.White,
+                        ScreenBackground,
+                        LightPink.copy(alpha = 0.58f)
+                    )
+                )
+            )
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -402,7 +411,8 @@ private fun AddExpenseDialog(
                         value = formState.amount,
                         onValueChange = onAmountChange,
                         placeholder = "0.00",
-                        keyboardType = KeyboardType.Decimal
+                        keyboardType = KeyboardType.Decimal,
+                        errorText = formState.amountError
                     )
                 }
 
@@ -421,7 +431,8 @@ private fun AddExpenseDialog(
                     SoftInput(
                         value = formState.description,
                         onValueChange = onDescriptionChange,
-                        placeholder = ""
+                        placeholder = "",
+                        errorText = formState.descriptionError
                     )
                 }
 
@@ -445,7 +456,8 @@ private fun AddExpenseDialog(
                     SoftInput(
                         value = formState.date,
                         onValueChange = onDateChange,
-                        placeholder = "May 22, 2026"
+                        placeholder = "May 22, 2026",
+                        errorText = formState.dateError
                     )
                 }
 
@@ -718,7 +730,8 @@ private fun SoftInput(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    errorText: String? = null
 ) {
     OutlinedTextField(
         value = value,
@@ -726,6 +739,17 @@ private fun SoftInput(
         placeholder = { Text(placeholder, color = Color.Black) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        isError = errorText != null,
+        supportingText = errorText?.let {
+            {
+                Text(
+                    text = it,
+                    color = ExpenseRed,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
         shape = RoundedCornerShape(14.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = FieldBackground,
@@ -735,7 +759,7 @@ private fun SoftInput(
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .heightIn(min = 56.dp)
             .shadow(4.dp, RoundedCornerShape(14.dp))
     )
 }

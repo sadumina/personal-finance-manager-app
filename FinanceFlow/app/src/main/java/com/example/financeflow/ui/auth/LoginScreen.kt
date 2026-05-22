@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mail
@@ -14,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -22,6 +24,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -57,13 +60,23 @@ fun LoginScreen(
     var password        by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe      by remember { mutableStateOf(false) }
+    var emailError      by remember { mutableStateOf<String?>(null) }
+    var passwordError   by remember { mutableStateOf<String?>(null) }
 
     val scrollState = rememberScrollState()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.White,
+                        Color(0xFFF8F5FF),
+                        Color.White
+                    )
+                )
+            )
     ) {
         Column(
             modifier = Modifier
@@ -117,8 +130,14 @@ fun LoginScreen(
             // ── Email field ───────────────────────────────────────────────────
             AuthTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = {
+                    email = it.trim()
+                    emailError = null
+                },
                 placeholder = "Enter your email",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                isError = emailError != null,
+                supportingText = emailError,
                 trailingIcon = {
                     Icon(
                         Icons.Default.Mail,
@@ -134,8 +153,14 @@ fun LoginScreen(
             // ── Password field ────────────────────────────────────────────────
             AuthTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    passwordError = null
+                },
                 placeholder = "Password",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                isError = passwordError != null,
+                supportingText = passwordError,
                 visualTransformation = if (passwordVisible)
                     VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
@@ -184,7 +209,16 @@ fun LoginScreen(
             Spacer(Modifier.height(24.dp))
 
             // ── Next button ───────────────────────────────────────────────────
-            AuthPrimaryButton(text = "Next", onClick = onNext)
+            AuthPrimaryButton(
+                text = "Next",
+                onClick = {
+                    emailError = validateEmail(email)
+                    passwordError = validatePassword(password)
+                    if (emailError == null && passwordError == null) {
+                        onNext()
+                    }
+                }
+            )
 
             Spacer(Modifier.height(16.dp))
 
@@ -215,4 +249,14 @@ fun LoginScreenPreview() {
     MaterialTheme {
         LoginScreen()
     }
+}
+
+private fun validateEmail(email: String): String? {
+    if (email.isBlank()) return "Email is required"
+    return if (android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) null else "Enter a valid email"
+}
+
+private fun validatePassword(password: String): String? {
+    if (password.isBlank()) return "Password is required"
+    return if (password.length >= 6) null else "Password must be at least 6 characters"
 }

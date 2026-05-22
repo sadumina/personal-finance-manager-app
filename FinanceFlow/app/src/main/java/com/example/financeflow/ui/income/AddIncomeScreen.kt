@@ -27,6 +27,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 // ─── Theme Colors ────────────────────────────────────────────────────────────
 private val BgPurple    = Color(0xFFF3ECFF)
@@ -82,6 +84,8 @@ fun AddIncomeScreen(
     var description     by remember { mutableStateOf("") }
     var date            by remember { mutableStateOf("05/05/2026") }
     var notes           by remember { mutableStateOf("") }
+    var amountError     by remember { mutableStateOf<String?>(null) }
+    var dateError       by remember { mutableStateOf<String?>(null) }
 
     var currencyExpanded by remember { mutableStateOf(false) }
     var sourceExpanded   by remember { mutableStateOf(false) }
@@ -132,7 +136,11 @@ fun AddIncomeScreen(
                         IncomeFieldLabel("Amount")
                         IncomeAmountField(
                             value = amount,
-                            onValueChange = { amount = it }
+                            onValueChange = {
+                                amount = sanitizeAmount(it)
+                                amountError = null
+                            },
+                            errorText = amountError
                         )
 
                         HorizontalDivider(color = DividerColor, thickness = 1.dp)
@@ -177,7 +185,11 @@ fun AddIncomeScreen(
                         IncomeFieldLabel("Date")
                         IncomeDateField(
                             value = date,
-                            onValueChange = { date = it }
+                            onValueChange = {
+                                date = it.take(10)
+                                dateError = null
+                            },
+                            errorText = dateError
                         )
 
                         HorizontalDivider(color = DividerColor, thickness = 1.dp)
@@ -201,8 +213,12 @@ fun AddIncomeScreen(
             // ── Add Income Button ─────────────────────────────────────────────
             Button(
                 onClick = {
-                    onAddIncome(selectedSource, amount, selectedCurrency,
-                        description, date, notes)
+                    amountError = validateIncomeAmount(amount)
+                    dateError = validateIncomeDate(date)
+                    if (amountError == null && dateError == null) {
+                        onAddIncome(selectedSource, amount, selectedCurrency,
+                            description, date, notes)
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -277,13 +293,27 @@ fun IncomeFieldLabel(text: String) {
 
 /** Styled numeric Amount field with up/down arrows */
 @Composable
-fun IncomeAmountField(value: String, onValueChange: (String) -> Unit) {
+fun IncomeAmountField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    errorText: String? = null
+) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = Modifier.fillMaxWidth(),
         placeholder = { Text("0.00", color = TextMuted) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        isError = errorText != null,
+        supportingText = errorText?.let {
+            {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp
+                )
+            }
+        },
         singleLine = true,
         trailingIcon = {
             Column {
@@ -357,12 +387,26 @@ fun IncomeTextField(
 
 /** Date field with calendar icon */
 @Composable
-fun IncomeDateField(value: String, onValueChange: (String) -> Unit) {
+fun IncomeDateField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    errorText: String? = null
+) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
+        isError = errorText != null,
+        supportingText = errorText?.let {
+            {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp
+                )
+            }
+        },
         trailingIcon = {
             Icon(
                 Icons.Default.CalendarMonth,
@@ -380,6 +424,37 @@ fun IncomeDateField(value: String, onValueChange: (String) -> Unit) {
             focusedTextColor = TextDark,
             unfocusedTextColor = TextDark
         )
+    )
+}
+
+private fun sanitizeAmount(value: String): String {
+    val filtered = value.filter { it.isDigit() || it == '.' }
+    val dotIndex = filtered.indexOf('.')
+    return if (dotIndex == -1) {
+        filtered.take(10)
+    } else {
+        (filtered.take(dotIndex + 1) + filtered.drop(dotIndex + 1).replace(".", "")).take(10)
+    }
+}
+
+private fun validateIncomeAmount(value: String): String? {
+    val amount = value.toDoubleOrNull()
+    return when {
+        value.isBlank() -> "Amount is required"
+        amount == null -> "Enter a valid amount"
+        amount <= 0.0 -> "Amount must be more than zero"
+        amount > 100_000_000.0 -> "Amount is too high"
+        else -> null
+    }
+}
+
+private fun validateIncomeDate(value: String): String? {
+    if (value.isBlank()) return "Date is required"
+    return runCatching {
+        LocalDate.parse(value, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+    }.fold(
+        onSuccess = { null },
+        onFailure = { "Use date format DD/MM/YYYY" }
     )
 }
 

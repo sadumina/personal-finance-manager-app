@@ -1,5 +1,10 @@
 package com.example.financeflow.ui.dashboard
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
@@ -60,6 +65,18 @@ fun DashboardScreen(
         NavHost(
             navController = navController,
             startDestination = Routes.HOME,
+            enterTransition = {
+                fadeIn(animationSpec = tween(180)) + slideInHorizontally { it / 8 }
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(120)) + slideOutHorizontally { -it / 12 }
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(180)) + slideInHorizontally { -it / 8 }
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(120)) + slideOutHorizontally { it / 12 }
+            },
             modifier = Modifier
                 .padding(bottom = innerPadding.calculateBottomPadding())
                 .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))

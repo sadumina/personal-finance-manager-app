@@ -1,5 +1,10 @@
 package com.example.financeflow.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.padding
@@ -36,6 +41,18 @@ fun AppNavGraph(
     NavHost(
         navController = navController,
         startDestination = Routes.SPLASH,
+        enterTransition = {
+            fadeIn(animationSpec = tween(180)) + slideInHorizontally { it / 10 }
+        },
+        exitTransition = {
+            fadeOut(animationSpec = tween(120)) + slideOutHorizontally { -it / 12 }
+        },
+        popEnterTransition = {
+            fadeIn(animationSpec = tween(180)) + slideInHorizontally { -it / 10 }
+        },
+        popExitTransition = {
+            fadeOut(animationSpec = tween(120)) + slideOutHorizontally { it / 12 }
+        },
         modifier = Modifier.padding(top = topPadding)
     ) {
         composable(Routes.SPLASH) {

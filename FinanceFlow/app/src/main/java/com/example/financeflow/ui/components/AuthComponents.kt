@@ -42,6 +42,8 @@ fun AuthTextField(
     trailingIcon: (@Composable () -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    isError: Boolean = false,
+    supportingText: String? = null,
     modifier: Modifier = Modifier
 ) {
     OutlinedTextField(
@@ -54,6 +56,16 @@ fun AuthTextField(
         trailingIcon = trailingIcon?.let { { it() } },
         visualTransformation = visualTransformation,
         keyboardOptions = keyboardOptions,
+        isError = isError,
+        supportingText = supportingText?.let {
+            {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp
+                )
+            }
+        },
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         textStyle = TextStyle(color = TextDark, fontSize = 14.sp),
