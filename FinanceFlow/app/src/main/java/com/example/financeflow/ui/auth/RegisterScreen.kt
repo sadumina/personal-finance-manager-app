@@ -74,8 +74,8 @@ fun RegisterScreen(
 
     val scrollState = rememberScrollState()
 
-    LaunchedEffect(authState.isAuthenticated) {
-        if (authState.isAuthenticated) {
+    LaunchedEffect(authState.registrationCompleted) {
+        if (authState.registrationCompleted) {
             onNext()
         }
     }

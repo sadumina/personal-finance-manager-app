@@ -40,7 +40,7 @@ private val StreakAmber     = Color(0xFFFFB800)
 //  Data model  (replace with domain model later)
 // ─────────────────────────────────────────────
 data class BalanceCardData(
-    val userName: String       = "Kavindu",
+    val userName: String       = "User",
     val availableBalance: Long = 35_000L,
     val totalIncome: Long      = 120_000L,
     val totalExpenses: Long    = 37_500L,

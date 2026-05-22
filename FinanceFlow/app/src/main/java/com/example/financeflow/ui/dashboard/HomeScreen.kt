@@ -91,6 +91,7 @@ private val OPTIONAL_BUDGET_REMAINING          = 13_900L
  */
 @Composable
 fun HomeScreen(
+    userName: String = "User",
     onAddIncomeClick: () -> Unit = {},
     onAddExpenseClick: () -> Unit = {},
     onIncomeClick: () -> Unit = {},
@@ -118,7 +119,7 @@ fun HomeScreen(
         ) {
             item {
                 BalanceCard(
-                    data = sampleBalanceData,
+                    data = sampleBalanceData.copy(userName = userName.ifBlank { "User" }),
                     onThemeClick = onThemeClick,
                     onProfileClick = onProfileClick
                 )

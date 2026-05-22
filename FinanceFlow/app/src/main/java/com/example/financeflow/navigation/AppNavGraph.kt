@@ -73,7 +73,7 @@ fun AppNavGraph(
                 authState = authState,
                 onLogin = authViewModel::login,
                 onNext = {
-                    navController.navigate(Routes.WELCOME) {
+                    navController.navigate(Routes.DASHBOARD) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -100,7 +100,8 @@ fun AppNavGraph(
                 authState = authState,
                 onRegister = authViewModel::register,
                 onNext = {
-                    navController.navigate(Routes.WELCOME) {
+                    authViewModel.clearAuthMessage()
+                    navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.REGISTER) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -143,10 +144,21 @@ fun AppNavGraph(
         }
 
         composable(Routes.DASHBOARD) {
+            val authViewModel: AuthViewModel = hiltViewModel()
+            val authState = authViewModel.uiState.collectAsStateWithLifecycle().value
+
             DashboardScreen(
                 rootNavController = navController,
                 isDarkTheme = isDarkTheme,
-                onThemeToggle = onThemeToggle
+                onThemeToggle = onThemeToggle,
+                userName = authState.userName,
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
@@ -189,11 +201,14 @@ fun AppNavGraph(
         }
 
         composable(Routes.PROFILE) {
+            val authViewModel: AuthViewModel = hiltViewModel()
+
             ProfileScreen(
                 isDarkTheme = isDarkTheme,
                 onThemeToggle = onThemeToggle,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToLogout = {
+                    authViewModel.logout()
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }

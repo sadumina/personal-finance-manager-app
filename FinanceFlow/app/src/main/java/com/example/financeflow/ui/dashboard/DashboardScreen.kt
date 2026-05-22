@@ -39,7 +39,9 @@ import com.example.financeflow.ui.savings.SavingsScreen
 fun DashboardScreen(
     rootNavController: NavHostController,
     isDarkTheme: Boolean,
-    onThemeToggle: () -> Unit
+    onThemeToggle: () -> Unit,
+    userName: String,
+    onLogout: () -> Unit
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -86,6 +88,7 @@ fun DashboardScreen(
         ) {
             composable(Routes.HOME) {
                 HomeScreen(
+                    userName = userName,
                     onAddIncomeClick = { rootNavController.navigate(Routes.ADD_INCOME) },
                     onAddExpenseClick = { navigateDashboardTab(Routes.EXPENSES) },
                     onIncomeClick = { navigateDashboardTab(Routes.INCOME) },
@@ -126,7 +129,8 @@ fun DashboardScreen(
                 ProfileScreen(
                     isDarkTheme = isDarkTheme,
                     onThemeToggle = onThemeToggle,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToLogout = onLogout
                 )
             }
 

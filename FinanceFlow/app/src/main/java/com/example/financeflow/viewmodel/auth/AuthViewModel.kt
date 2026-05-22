@@ -14,7 +14,10 @@ import javax.inject.Inject
 data class AuthUiState(
     val isLoading: Boolean = false,
     val isAuthenticated: Boolean = false,
+    val registrationCompleted: Boolean = false,
     val passwordResetSent: Boolean = false,
+    val userName: String = "User",
+    val userEmail: String = "",
     val errorMessage: String? = null
 )
 
@@ -28,6 +31,25 @@ class AuthViewModel @Inject constructor(
     )
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
+    init {
+        refreshCurrentUser()
+    }
+
+    fun refreshCurrentUser() {
+        viewModelScope.launch {
+            val profile = repository.getCurrentUserProfile()
+            if (profile != null) {
+                _uiState.update {
+                    it.copy(
+                        isAuthenticated = true,
+                        userName = profile.name,
+                        userEmail = profile.email
+                    )
+                }
+            }
+        }
+    }
+
     fun login(
         email: String,
         password: String
@@ -35,13 +57,25 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update {
-                it.copy(isLoading = true, errorMessage = null, passwordResetSent = false)
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                    passwordResetSent = false,
+                    registrationCompleted = false
+                )
             }
 
             repository.login(email, password)
                 .onSuccess {
+                    val profile = repository.getCurrentUserProfile()
                     _uiState.update {
-                        it.copy(isLoading = false, isAuthenticated = true)
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = true,
+                            registrationCompleted = false,
+                            userName = profile?.name ?: it.userName,
+                            userEmail = profile?.email ?: it.userEmail
+                        )
                     }
                 }
                 .onFailure { error ->
@@ -65,13 +99,22 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update {
-                it.copy(isLoading = true, errorMessage = null, passwordResetSent = false)
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                    passwordResetSent = false,
+                    registrationCompleted = false
+                )
             }
 
             repository.register(fullName, email, phone, password)
                 .onSuccess {
                     _uiState.update {
-                        it.copy(isLoading = false, isAuthenticated = true)
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = false,
+                            registrationCompleted = true
+                        )
                     }
                 }
                 .onFailure { error ->
@@ -89,7 +132,12 @@ class AuthViewModel @Inject constructor(
     fun sendPasswordResetEmail(email: String) {
         viewModelScope.launch {
             _uiState.update {
-                it.copy(isLoading = true, errorMessage = null, passwordResetSent = false)
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                    passwordResetSent = false,
+                    registrationCompleted = false
+                )
             }
 
             repository.sendPasswordResetEmail(email)
@@ -120,7 +168,11 @@ class AuthViewModel @Inject constructor(
 
     fun clearAuthMessage() {
         _uiState.update {
-            it.copy(errorMessage = null, passwordResetSent = false)
+            it.copy(
+                errorMessage = null,
+                passwordResetSent = false,
+                registrationCompleted = false
+            )
         }
     }
 }

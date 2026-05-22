@@ -1,5 +1,10 @@
 package com.example.financeflow.repository.auth
 
+data class AuthUserProfile(
+    val name: String,
+    val email: String
+)
+
 interface AuthRepository {
 
     val isUserLoggedIn: Boolean
@@ -17,6 +22,8 @@ interface AuthRepository {
     ): Result<Unit>
 
     suspend fun sendPasswordResetEmail(email: String): Result<Unit>
+
+    suspend fun getCurrentUserProfile(): AuthUserProfile?
 
     fun logout()
 }
