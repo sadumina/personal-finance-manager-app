@@ -7,6 +7,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -26,6 +28,7 @@ import com.example.financeflow.ui.income.EditIncomeScreen
 import com.example.financeflow.ui.profile.ProfileScreen
 import com.example.financeflow.ui.savings.AddSavingScreen
 import com.example.financeflow.ui.savings.GoalDetailsScreen
+import com.example.financeflow.viewmodel.auth.AuthViewModel
 
 @Composable
 fun AppNavGraph(
@@ -63,13 +66,20 @@ fun AppNavGraph(
         }
 
         composable(Routes.LOGIN) {
+            val authViewModel: AuthViewModel = hiltViewModel()
+            val authState = authViewModel.uiState.collectAsStateWithLifecycle().value
+
             LoginScreen(
+                authState = authState,
+                onLogin = authViewModel::login,
                 onNext = {
                     navController.navigate(Routes.WELCOME) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
                         launchSingleTop = true
                     }
                 },
                 onForgotPassword = {
+                    authViewModel.clearAuthMessage()
                     navController.navigate(Routes.FORGOT_PASSWORD) {
                         launchSingleTop = true
                     }
@@ -83,9 +93,14 @@ fun AppNavGraph(
         }
 
         composable(Routes.REGISTER) {
+            val authViewModel: AuthViewModel = hiltViewModel()
+            val authState = authViewModel.uiState.collectAsStateWithLifecycle().value
+
             RegisterScreen(
+                authState = authState,
+                onRegister = authViewModel::register,
                 onNext = {
-                    navController.navigate(Routes.LOGIN) {
+                    navController.navigate(Routes.WELCOME) {
                         popUpTo(Routes.REGISTER) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -100,8 +115,14 @@ fun AppNavGraph(
         }
 
         composable(Routes.FORGOT_PASSWORD) {
+            val authViewModel: AuthViewModel = hiltViewModel()
+            val authState = authViewModel.uiState.collectAsStateWithLifecycle().value
+
             ForgotPasswordScreen(
+                authState = authState,
+                onSendResetEmail = authViewModel::sendPasswordResetEmail,
                 onVerify = {
+                    authViewModel.clearAuthMessage()
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.FORGOT_PASSWORD) { inclusive = true }
                         launchSingleTop = true

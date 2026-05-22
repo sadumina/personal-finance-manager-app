@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.financeflow.R
+import com.example.financeflow.viewmodel.auth.AuthUiState
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 private val PrimaryPurple = Color(0xFF7C4DFF)
@@ -54,6 +55,8 @@ private val LinkColor     = Color(0xFF4CAF50)
  */
 @Composable
 fun RegisterScreen(
+    authState: AuthUiState = AuthUiState(),
+    onRegister: (String, String, String, String) -> Unit = { _, _, _, _ -> },
     onNext: () -> Unit = {},
     onLoginClick: () -> Unit = {}
 ) {
@@ -70,6 +73,12 @@ fun RegisterScreen(
     var termsError      by remember { mutableStateOf<String?>(null) }
 
     val scrollState = rememberScrollState()
+
+    LaunchedEffect(authState.isAuthenticated) {
+        if (authState.isAuthenticated) {
+            onNext()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -272,7 +281,8 @@ fun RegisterScreen(
 
             // ── Next button ───────────────────────────────────────────────────
             AuthPrimaryButton(
-                text = "Next",
+                text = if (authState.isLoading) "Creating account..." else "Next",
+                enabled = !authState.isLoading,
                 onClick = {
                     fullNameError = validateName(fullName)
                     emailError = validateRegisterEmail(email)
@@ -286,10 +296,20 @@ fun RegisterScreen(
                         passwordError == null &&
                         termsError == null
                     ) {
-                        onNext()
+                        onRegister(fullName, email, phone, password)
                     }
                 }
             )
+
+            authState.errorMessage?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = it,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 

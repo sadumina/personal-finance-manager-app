@@ -1,196 +1,137 @@
 package com.example.financeflow.ui.auth
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
+import com.example.financeflow.viewmodel.auth.AuthUiState
 
-// ─── Colors ───────────────────────────────────────────────────────────────────
 private val PrimaryPurple = Color(0xFF7C4DFF)
-private val TextDark      = Color(0xFF1A1A1A)
-private val TextHint      = Color(0xFFAAAAAA)
-private val OtpBoxBg      = Color(0xFFF5F5F5)
-private val OtpBorder     = Color(0xFFDDDDDD)
+private val TextDark = Color(0xFF1A1A1A)
+private val TextHint = Color(0xFFAAAAAA)
 
-/**
- * ForgotPasswordScreen
- *
- * "Almost there" – displays a 6-digit OTP input and a countdown timer
- * to resend the code. Tapping "Verify" calls [onVerify].
- *
- * @param email    The email address shown in the body text.
- * @param onVerify Called when the user taps the Verify button.
- */
 @Composable
 fun ForgotPasswordScreen(
-    email: String = "contact.uiuxexperts@gmail.com",
+    authState: AuthUiState = AuthUiState(),
+    onSendResetEmail: (String) -> Unit = {},
     onVerify: () -> Unit = {}
 ) {
-    // ── OTP state: 6 individual digit strings ─────────────────────────────────
-    val otpValues = remember { mutableStateListOf("6", "3", "5", "2", "2", "9") }
-    val focusRequesters = remember { List(6) { FocusRequester() } }
-
-    // ── Resend countdown (30 s) ───────────────────────────────────────────────
-    var secondsLeft by remember { mutableIntStateOf(30) }
-    LaunchedEffect(Unit) {
-        while (secondsLeft > 0) {
-            delay(1_000L)
-            secondsLeft--
-        }
-    }
-
-    val countdownText = String.format("%02d:%02d", secondsLeft / 60, secondsLeft % 60)
+    var email by remember { mutableStateOf("") }
+    var emailError by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 24.dp),
+        contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.Start
         ) {
-
-            Spacer(Modifier.height(80.dp))
-
-            // ── Headline ──────────────────────────────────────────────────────
             Text(
-                text = "Almost there",
+                text = "Reset password",
                 fontSize = 30.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = TextDark
             )
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // ── Body text ─────────────────────────────────────────────────────
-            val bodyText = buildAnnotatedString {
-                append("Please enter the 6-digit code sent to your\nemail ")
-                withStyle(SpanStyle(color = PrimaryPurple, fontWeight = FontWeight.SemiBold)) {
-                    append(email)
-                }
-                append(" for verification.")
-            }
-            Text(text = bodyText, fontSize = 14.sp, color = TextHint, lineHeight = 20.sp)
+            Text(
+                text = "Enter your account email and we will send a secure reset link.",
+                fontSize = 14.sp,
+                color = TextHint,
+                lineHeight = 20.sp
+            )
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(28.dp))
 
-            // ── OTP boxes ─────────────────────────────────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                otpValues.forEachIndexed { index, digit ->
-                    OtpBox(
-                        value = digit,
-                        focusRequester = focusRequesters[index],
-                        onValueChange = { newVal ->
-                            if (newVal.length <= 1 && newVal.all { it.isDigit() }) {
-                                otpValues[index] = newVal
-                                // Auto-advance focus
-                                if (newVal.isNotEmpty() && index < 5) {
-                                    focusRequesters[index + 1].requestFocus()
-                                }
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
+            AuthTextField(
+                value = email,
+                onValueChange = {
+                    email = it.trim()
+                    emailError = null
+                },
+                placeholder = "Enter your email",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                isError = emailError != null,
+                supportingText = emailError,
+                trailingIcon = {
+                    Icon(
+                        Icons.Default.Mail,
+                        contentDescription = null,
+                        tint = TextHint
                     )
                 }
-            }
+            )
 
-            Spacer(Modifier.height(32.dp))
-
-            // ── Verify button ─────────────────────────────────────────────────
-            AuthPrimaryButton(text = "Verify", onClick = onVerify)
-
-            Spacer(Modifier.height(24.dp))
-
-            // ── Resend section ────────────────────────────────────────────────
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            authState.errorMessage?.let {
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Didn't receive any code? Resend Again",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextDark
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Request a new code in $countdownText",
+                    text = it,
                     fontSize = 12.sp,
-                    color = TextHint
+                    color = MaterialTheme.colorScheme.error
                 )
             }
+
+            if (authState.passwordResetSent) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Reset email sent. Check your inbox.",
+                    fontSize = 12.sp,
+                    color = PrimaryPurple
+                )
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            AuthPrimaryButton(
+                text = if (authState.isLoading) "Sending..." else "Send reset email",
+                enabled = !authState.isLoading,
+                onClick = {
+                    emailError = validateResetEmail(email)
+                    if (emailError == null) {
+                        onSendResetEmail(email)
+                    }
+                }
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            AuthPrimaryButton(
+                text = "Back to login",
+                enabled = !authState.isLoading,
+                onClick = onVerify
+            )
         }
     }
 }
-
-/**
- * OtpBox
- *
- * A single character input box for the OTP row.
- */
-@Composable
-private fun OtpBox(
-    value: String,
-    focusRequester: FocusRequester,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .size(48.dp)
-            .background(OtpBoxBg, RoundedCornerShape(10.dp))
-            .border(1.dp, OtpBorder, RoundedCornerShape(10.dp))
-    ) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier
-                .fillMaxSize()
-                .focusRequester(focusRequester),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true,
-            textStyle = TextStyle(
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextDark,
-                textAlign = TextAlign.Center
-            ),
-            decorationBox = { inner ->
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    inner()
-                }
-            }
-        )
-    }
-}
-
-// ─── Preview ──────────────────────────────────────────────────────────────────
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
@@ -198,4 +139,9 @@ fun ForgotPasswordScreenPreview() {
     MaterialTheme {
         ForgotPasswordScreen()
     }
+}
+
+private fun validateResetEmail(email: String): String? {
+    if (email.isBlank()) return "Email is required"
+    return if (android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) null else "Enter a valid email"
 }
