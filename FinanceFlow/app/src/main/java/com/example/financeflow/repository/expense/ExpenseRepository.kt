@@ -16,11 +16,18 @@ class ExpenseRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth
 ) {
-    private val uid get() = auth.currentUser?.uid ?: error("User not logged in")
+    private val uid get() = auth.currentUser?.uid
 
     fun getExpensesFlow(): Flow<List<Expense>> = callbackFlow {
+        val userId = uid
+        if (userId == null) {
+            trySend(emptyList())
+            awaitClose { }
+            return@callbackFlow
+        }
+
         val listener = firestore
-            .collection("users").document(uid)
+            .collection("users").document(userId)
             .collection("expenses")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
@@ -40,18 +47,20 @@ class ExpenseRepository @Inject constructor(
     }
 
     suspend fun addExpense(expense: Expense): String {
+        val userId = uid ?: error("Please log in before adding expenses")
         val reference = firestore
-            .collection("users").document(uid)
+            .collection("users").document(userId)
             .collection("expenses")
-            .add(expense.copy(userId = uid))
+            .add(expense.copy(userId = userId))
             .await()
 
         return reference.id
     }
 
     suspend fun deleteExpense(expenseId: String) {
+        val userId = uid ?: error("Please log in before deleting expenses")
         firestore
-            .collection("users").document(uid)
+            .collection("users").document(userId)
             .collection("expenses")
             .document(expenseId)
             .delete()
