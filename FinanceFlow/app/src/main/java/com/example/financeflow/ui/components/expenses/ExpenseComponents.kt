@@ -1,8 +1,12 @@
 package com.example.financeflow.ui.components.expenses
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -34,6 +39,7 @@ import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.material.icons.outlined.TrendingDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -45,6 +51,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,7 +60,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -75,30 +84,61 @@ fun ExpenseHeader(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-        colors = CardDefaults.cardColors(containerColor = ExpenseRed),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            Color(0xFFFF2F39),
+                            ExpenseRed,
+                            Color(0xFFE9275D)
+                        )
+                    )
+                )
                 .padding(horizontal = 20.dp, vertical = 24.dp)
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Expense Tracker",
-                    color = Color.White,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    text = "Low-friction tracking for busy days",
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Expense Tracker",
+                        color = Color.White,
+                        fontSize = 23.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        text = "Low-friction tracking for busy days",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color.White.copy(alpha = 0.16f))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.TrendingDown,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("Live", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
 
-            Spacer(Modifier.height(34.dp))
+            Spacer(Modifier.height(26.dp))
 
             SelectField(
                 value = selectedMonth,
@@ -113,29 +153,90 @@ fun ExpenseHeader(
 
 @Composable
 fun BudgetCard(uiState: ExpenseUiState) {
+    var played by remember { mutableStateOf(false) }
+    val usedPercent = if (uiState.optionalBudget <= 0.0) {
+        0f
+    } else {
+        (uiState.totalOptional / uiState.optionalBudget).toFloat().coerceIn(0f, 1f)
+    }
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (played) usedPercent else 0f,
+        animationSpec = tween(durationMillis = 850),
+        label = "expense_budget_progress"
+    )
+    LaunchedEffect(usedPercent) { played = true }
+
     RoundedPanel(
-        background = LightPink,
+        background = Color.Transparent,
         modifier = Modifier.padding(horizontal = 22.dp)
     ) {
-        Column(modifier = Modifier.padding(28.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Outlined.AccountBalanceWallet,
-                    contentDescription = null,
-                    tint = Color.Black,
-                    modifier = Modifier.size(28.dp)
+        Column(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            LightPink,
+                            Color(0xFFFFEFF2),
+                            Color(0xFFFFDCE4)
+                        )
+                    )
                 )
+                .padding(28.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color.White.copy(alpha = 0.78f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.AccountBalanceWallet,
+                        contentDescription = null,
+                        tint = ExpenseRed,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
                 Spacer(Modifier.width(10.dp))
-                Text("Optional Budget Remaining", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Optional Budget Remaining", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                    Text(
+                        "${(usedPercent * 100).toInt()}% used this month",
+                        fontSize = 11.sp,
+                        color = Color.Black.copy(alpha = 0.55f),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(22.dp))
             Text(
                 text = formatLkr(uiState.optionalRemaining),
                 color = Color(0xFFD22F37),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold
             )
-            Spacer(Modifier.height(90.dp))
+            Spacer(Modifier.height(18.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White.copy(alpha = 0.7f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(animatedProgress)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(50))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFFFF3B43), Color(0xFFFF8A65))
+                            )
+                        )
+                )
+            }
+            Spacer(Modifier.height(42.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(40.dp, Alignment.CenterHorizontally)
@@ -232,11 +333,48 @@ fun ExpenseListCard(
                 .padding(horizontal = 26.dp, vertical = 34.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            val rows = if (expenses.isEmpty()) sampleExpenses else expenses
-            rows.take(6).forEach { expense ->
-                ExpenseRow(expense = expense, onDelete = onDelete)
+            Text("Recent Expenses", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+            Spacer(Modifier.height(2.dp))
+            if (expenses.isEmpty()) {
+                EmptyExpenseState()
+            } else {
+                expenses.take(6).forEach { expense ->
+                    ExpenseRow(expense = expense, onDelete = onDelete)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyExpenseState() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .background(LightPink),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.AccountBalanceWallet,
+                contentDescription = null,
+                tint = ExpenseRed,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+        Text("No expenses yet", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+        Text(
+            "Quick add a category above to start tracking.",
+            fontSize = 11.sp,
+            color = Color.Black.copy(alpha = 0.55f)
+        )
     }
 }
 
@@ -435,17 +573,37 @@ private fun MiniStatCard(title: String, value: String) {
 private fun QuickCategory(category: String, onClick: () -> Unit) {
     val icon = categoryIcon(category)
     val color = categoryColor(category)
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.92f else 1f,
+        animationSpec = tween(140),
+        label = "expense_category_press"
+    )
     Column(
         modifier = Modifier
             .width(56.dp)
-            .clickable(onClick = onClick),
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
                 .size(44.dp)
+                .shadow(5.dp, RoundedCornerShape(14.dp), ambientColor = color.copy(alpha = 0.22f), spotColor = color.copy(alpha = 0.34f))
                 .clip(RoundedCornerShape(12.dp))
-                .background(color),
+                .background(
+                    Brush.linearGradient(
+                        listOf(color.copy(alpha = 0.92f), color)
+                    )
+                ),
             contentAlignment = Alignment.Center
         ) {
             Icon(icon, contentDescription = category, tint = Color.White, modifier = Modifier.size(23.dp))
@@ -462,32 +620,89 @@ private fun SuggestionRow(
     badge: String,
     onClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.98f else 1f,
+        animationSpec = tween(120),
+        label = "suggestion_press"
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(38.dp)
+            .height(48.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .shadow(4.dp, RoundedCornerShape(10.dp))
             .clip(RoundedCornerShape(10.dp))
             .background(FieldBackground)
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.weight(1f))
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(iconColor.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = if (badge == "Frequently") "Coffee break" else "Office ride",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.Black
+            )
+            Text(
+                text = if (badge == "Frequently") "Usually after lunch" else "Common weekday trip",
+                fontSize = 10.sp,
+                color = Color.Black.copy(alpha = 0.55f)
+            )
+        }
         SmallBadge(text = badge, tint = Color.Black.copy(alpha = 0.75f))
     }
 }
 
 @Composable
 private fun ExpenseRow(expense: Expense, onDelete: (String) -> Unit) {
+    var visible by remember { mutableStateOf(false) }
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(260),
+        label = "expense_row_alpha"
+    )
+    val offset by animateFloatAsState(
+        targetValue = if (visible) 0f else 18f,
+        animationSpec = tween(260),
+        label = "expense_row_offset"
+    )
+    LaunchedEffect(Unit) { visible = true }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(58.dp)
-            .shadow(5.dp, RoundedCornerShape(22.dp))
+            .height(64.dp)
+            .graphicsLayer {
+                this.alpha = alpha
+                translationY = offset
+            }
+            .shadow(6.dp, RoundedCornerShape(22.dp), ambientColor = SoftShadow, spotColor = SoftShadow)
             .clip(RoundedCornerShape(22.dp))
-            .background(Color.White)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(Color.White, Color(0xFFFFFBFB))
+                )
+            )
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -510,16 +725,28 @@ private fun ExpenseRow(expense: Expense, onDelete: (String) -> Unit) {
                 overflow = TextOverflow.Ellipsis
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Today.", fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                Text(expense.date.ifBlank { "Today." }, fontSize = 10.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.width(8.dp))
                 SmallBadge(text = expense.paymentMethod.ifBlank { "Card" }, tint = Color.Black)
             }
         }
-        SmallBadge(
-            text = expense.expenseType.replaceFirstChar { it.uppercase() },
-            tint = if (expense.expenseType == "must") Color(0xFFB89000) else Color(0xFF2D8FE8),
-            background = if (expense.expenseType == "must") Color(0xFFFFF6CE) else Color(0xFFEAF5FF)
-        )
+        Column(horizontalAlignment = Alignment.End) {
+            if (expense.amount > 0.0) {
+                Text(
+                    text = "-${formatLkr(expense.amount)}",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = ExpenseRed,
+                    maxLines = 1
+                )
+                Spacer(Modifier.height(4.dp))
+            }
+            SmallBadge(
+                text = expense.expenseType.replaceFirstChar { it.uppercase() },
+                tint = if (expense.expenseType == "must") Color(0xFFB89000) else Color(0xFF2D8FE8),
+                background = if (expense.expenseType == "must") Color(0xFFFFF6CE) else Color(0xFFEAF5FF)
+            )
+        }
         IconButton(
             onClick = { if (expense.id.isNotBlank()) onDelete(expense.id) },
             modifier = Modifier.size(34.dp)
