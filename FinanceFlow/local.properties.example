@@ -1,0 +1,5 @@
+# Copy this file to local.properties after you have an Android SDK.
+# Keep local.properties private because SDK paths are different on every PC.
+#
+# Default Windows SDK location:
+sdk.dir=C\:\\Users\\Sadumina Rathnayaka\\AppData\\Local\\Android\\Sdk

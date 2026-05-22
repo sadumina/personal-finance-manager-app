@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "vscjava.vscode-java-pack",
+    "fwcd.kotlin",
+    "vscjava.vscode-gradle",
+    "redhat.vscode-xml",
+    "adelphes.android-dev-ext"
+  ]
+}
